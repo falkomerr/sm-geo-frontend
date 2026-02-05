@@ -1,4 +1,3 @@
-import { useState, useEffect, useCallback } from 'react';
 import { MapPin, Users, Activity, Clock } from 'lucide-react';
 import { StatCard } from '../../app/features/dashboard/ui/stat-card';
 import { QuickActions } from '../../app/features/dashboard/ui/quick-actions';
@@ -8,57 +7,40 @@ import { getDashboardStats } from '../../app/features/dashboard/api/get-dashboar
 import { getRecentActivity } from '../../app/features/dashboard/api/get-recent-activity';
 import { getChartData } from '../../app/features/dashboard/api/get-chart-data';
 import type { DashboardStats, RecentActivityItem, ChartDataPoint } from '../../app/features/dashboard/model/types';
+import { useShortPolling } from '../../shared/hooks/useShortPolling';
 
 export function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentActivities, setRecentActivities] = useState<RecentActivityItem[]>([]);
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = async () => {
     console.log('[DashboardPage] Starting fetch...');
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [statsData, activitiesData, chartDataResult] = await Promise.all([
-        getDashboardStats(),
-        getRecentActivity(),
-        getChartData(),
-      ]);
+    const [statsData, activitiesData, chartDataResult] = await Promise.all([
+      getDashboardStats(),
+      getRecentActivity(),
+      getChartData(),
+    ]);
 
-      console.log('[DashboardPage] Received data:', {
-        statsData,
-        activitiesData,
-        chartDataResult
-      });
+    console.log('[DashboardPage] Received data:', {
+      statsData,
+      activitiesData,
+      chartDataResult
+    });
 
-      setStats(statsData);
-      setRecentActivities(activitiesData);
-      setChartData(chartDataResult);
+    return {
+      statsData,
+      activitiesData,
+      chartDataResult
+    };
+  };
 
-      console.log('[DashboardPage] State updated');
-    } catch (error) {
-      console.error('[DashboardPage] Failed to fetch:', error);
-      setError('Не удалось загрузить данные дашборда');
-    } finally {
-      setIsLoading(false);
-      console.log('[DashboardPage] Fetch complete, isLoading = false');
-    }
-  }, []);
+  const { data: dashboardData, error, isLoading } = useShortPolling({
+    fetchFn: fetchDashboardData,
+    interval: 5000,
+    enabled: true,
+  });
 
-  useEffect(() => {
-    console.log('[DashboardPage] Component mounted, calling fetch...');
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+  const stats = dashboardData?.statsData || null;
+  const recentActivities = dashboardData?.activitiesData || [];
+  const chartData = dashboardData?.chartDataResult || [];
 
-  if (isLoading && !stats) {
-    console.log('[DashboardPage] Showing loading state');
-  }
-
-  if (!isLoading && stats) {
-    console.log('[DashboardPage] Rendering dashboard with data:', { stats, chartData, recentActivities });
-  }
 
   return (
     <div className="min-h-screen p-8">
@@ -66,7 +48,7 @@ export function DashboardPage() {
 
       {error && (
         <div className="mb-4 rounded-md bg-red-50 p-4">
-          <p className="text-sm text-red-800">{error}</p>
+          <p className="text-sm text-red-800">{error.message}</p>
         </div>
       )}
 
