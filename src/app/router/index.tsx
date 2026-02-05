@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import { LoginPage } from '@pages/login'
 import { DashboardPage } from '@pages/dashboard'
 import { LocationsPage } from '@pages/locations'
@@ -14,7 +15,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export function AppRouter() {
   return (
-    <Routes>
+    <HashRouter>
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/dashboard"
@@ -34,5 +36,6 @@ export function AppRouter() {
       />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </HashRouter>
   )
 }
