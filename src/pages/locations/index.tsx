@@ -6,14 +6,17 @@ import { FiltersPanel, type FilterValues } from '../../app/features/locations/ui
 import { DeleteDialog } from '../../app/features/locations/ui/delete-dialog';
 import { MapWrapper } from '../../app/features/locations/ui/map-wrapper';
 import { getLocations } from '../../app/features/locations/api/get-locations';
+import { getAllLocations } from '../../app/features/locations/api/get-all-locations';
 import { deleteLocation } from '../../app/features/locations/api/delete-location';
 import type { Location } from '../../app/features/locations/model/types';
 
 export function LocationsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
+  const [allLocations, setAllLocations] = useState<Location[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMap, setIsLoadingMap] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([{ id: 'timestamp', desc: true }]);
   const [pagination, setPagination] = useState<PaginationState>({
@@ -44,9 +47,6 @@ export function LocationsPage() {
         endDate: currentFilters.endDate?.toISOString(),
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
-        // Note: sort and order are passed but not used (backend doesn't support them)
-        // sort: sorting[0]?.id,
-        // order: sorting[0]?.desc ? 'desc' : 'asc',
       });
 
       console.log('[LocationsPage] Response received:', response);
@@ -66,12 +66,32 @@ export function LocationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentFilters, pagination]); // Removed 'sorting' - not used by backend
+  }, [currentFilters, pagination]);
+
+  const fetchAllLocations = useCallback(async () => {
+    console.log('[LocationsPage] Fetching all locations for map...');
+    setIsLoadingMap(true);
+    try {
+      const all = await getAllLocations({
+        userId: currentFilters.userId || undefined,
+        fullName: currentFilters.fullName || undefined,
+        startDate: currentFilters.startDate?.toISOString(),
+        endDate: currentFilters.endDate?.toISOString(),
+      });
+      setAllLocations(all);
+      console.log('[LocationsPage] All locations loaded:', all.length);
+    } catch (error) {
+      console.error('[LocationsPage] Failed to fetch all locations:', error);
+    } finally {
+      setIsLoadingMap(false);
+    }
+  }, [currentFilters]);
 
   useEffect(() => {
     console.log('[LocationsPage] Component mounted, fetching...');
     fetchLocations();
-  }, [fetchLocations]);
+    fetchAllLocations();
+  }, [fetchLocations, fetchAllLocations]);
 
   const handleFilterChange = (filters: FilterValues) => {
     setCurrentFilters(filters);
@@ -137,7 +157,7 @@ export function LocationsPage() {
           </TabsContent>
 
           <TabsContent value="map">
-            <MapWrapper locations={locations} />
+            <MapWrapper locations={allLocations} isLoading={isLoadingMap} />
           </TabsContent>
         </Tabs>
 

@@ -41,9 +41,18 @@ function MapController({ locations }: MapControllerProps) {
 
 interface LocationsMapProps {
   locations: Location[];
+  isLoading?: boolean;
 }
 
-export function LocationsMap({ locations }: LocationsMapProps) {
+export function LocationsMap({ locations, isLoading }: LocationsMapProps) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[600px] rounded-lg border bg-muted">
+        <p className="text-muted-foreground">Загрузка карты...</p>
+      </div>
+    );
+  }
+
   if (locations.length === 0) {
     return (
       <div className="flex items-center justify-center h-[600px] rounded-lg border bg-muted">
