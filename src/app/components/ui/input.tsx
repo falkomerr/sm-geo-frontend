@@ -39,7 +39,7 @@ function Input({
       <input
         type={type}
         className={cn(
-          'flex h-[88px] w-full rounded-[16px] border border-black/20 bg-white px-4 py-5 text-sm outline-none placeholder:text-black/40 disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-12 w-full rounded-[16px] border border-black/20 bg-white px-4 py-5 text-sm outline-none placeholder:text-black/40 disabled:cursor-not-allowed disabled:opacity-50',
           error && 'border-red-500 bg-red-50',
           className,
         )}
@@ -52,7 +52,7 @@ function Input({
     <div className='flex w-full flex-col'>
       <label
         className={cn(
-          'relative flex h-[88px] w-full flex-col items-start rounded-[16px] border px-4 py-5',
+          'relative flex h-12 w-full items-center rounded-[16px] border px-4 py-0',
           error ? 'border-red-500 bg-red-50' : 'border-black/20 bg-white',
           labelClassName
         )}

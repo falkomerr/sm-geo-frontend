@@ -53,12 +53,6 @@ export function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-sm">
         <Card className="w-full">
-        <CardHeader className="space-y-3">
-          <CardTitle className="text-3xl font-bold text-center">Гео-трекинг Админ</CardTitle>
-          <CardDescription className="text-center text-base">
-            Введите email и пароль для входа
-          </CardDescription>
-        </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-3">

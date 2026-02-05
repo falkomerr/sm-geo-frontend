@@ -73,20 +73,15 @@ export function DateRangePicker({
             variant="secondary"
             data-empty={!dateRange}
             className={cn(
-              'relative flex h-[88px] w-full flex-col items-start rounded-[16px] border px-4 py-5 disabled:cursor-not-allowed disabled:opacity-50',
+              'relative flex h-12 w-full items-center rounded-[16px] border px-4 py-0 disabled:cursor-not-allowed disabled:opacity-50',
               error ? 'border-red-500 bg-red-50' : 'border-black/20 bg-white',
               inline && 'flex h-8 items-center justify-center rounded-full px-[15px] py-[12px]',
             )}
           >
-            {label && (
-              <span className={cn('text-xs font-medium', error ? 'text-red-600' : 'text-black/40')}>
-                {label}
-              </span>
-            )}
             {dateRange?.from ? (
               <div className="flex w-full items-center gap-x-1">
                 <CalendarIcon className="size-4 text-lg text-black" />
-                <span className="text-muted-foreground text-sm font-medium whitespace-nowrap">
+                <span className="text-sm font-medium whitespace-nowrap">
                   {formatDateRange()}
                 </span>
                 <ChevronDown className="ml-auto size-3 text-base text-black" />

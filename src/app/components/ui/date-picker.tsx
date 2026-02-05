@@ -64,15 +64,16 @@ export function DatePicker({
             variant="secondary"
             data-empty={!date}
             className={cn(
-              'relative flex h-[88px] w-full flex-col items-start rounded-[16px] border px-4 py-5',
+              'relative flex h-12 w-full items-center rounded-[16px] border px-4 py-0',
               error ? 'border-red-500 bg-red-50' : 'border-black/20 bg-white'
             )}
           >
-            <span className={cn('text-xs font-medium', error ? 'text-red-600' : 'text-black/40')}>
-              {label}
-            </span>
             {date ? (
-              format(date, 'PPP', { locale: ru })
+              <div className="flex w-full items-center gap-x-1">
+                <CalendarIcon className="size-4 text-lg text-black" />
+                <span className="text-sm font-medium">{format(date, 'PPP', { locale: ru })}</span>
+                <ChevronDown className="ml-auto size-3 text-base text-black" />
+              </div>
             ) : (
               <div className="flex w-full items-center gap-x-1">
                 <CalendarIcon className="size-4 text-lg text-black" />
