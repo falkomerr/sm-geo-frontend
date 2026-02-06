@@ -5,6 +5,7 @@ interface UseShortPollingOptions<T> {
   interval?: number;
   enabled?: boolean;
   deps?: any[];
+  compareFn?: (prev: T | null, next: T) => boolean;
 }
 
 interface UseShortPollingResult<T> {
@@ -21,6 +22,7 @@ export function useShortPolling<T>({
   interval = 5000,
   enabled = true,
   deps = [],
+  compareFn,
 }: UseShortPollingOptions<T>): UseShortPollingResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -28,12 +30,34 @@ export function useShortPolling<T>({
 
   const timerIdRef = useRef<NodeJS.Timeout | null>(null);
   const isPollingRef = useRef<boolean>(false);
+  const isFirstLoadRef = useRef<boolean>(true);
+  const dataRef = useRef<T | null>(null);
+
+  // Храним актуальные значения в refs
+  const fetchFnRef = useRef(fetchFn);
+  const compareFnRef = useRef(compareFn);
+  const intervalRef = useRef(interval);
+  const enabledRef = useRef(enabled);
+
+  dataRef.current = data;
+  fetchFnRef.current = fetchFn;
+  compareFnRef.current = compareFn;
+  intervalRef.current = interval;
+  enabledRef.current = enabled;
 
   const fetchData = useCallback(async () => {
     try {
       console.log('[useShortPolling] Fetching data...');
-      const result = await fetchFn();
-      setData(result);
+      const result = await fetchFnRef.current();
+
+      const hasDataChanged = !compareFnRef.current || !compareFnRef.current(dataRef.current, result);
+
+      if (hasDataChanged) {
+        console.log('[useShortPolling] Data changed, updating...');
+        setData(result);
+      } else {
+        console.log('[useShortPolling] Data unchanged, skipping update');
+      }
       setError(null);
       console.log('[useShortPolling] Data fetched successfully');
     } catch (err) {
@@ -41,31 +65,40 @@ export function useShortPolling<T>({
       setError(errorObj);
       console.error('[useShortPolling] Error fetching data:', errorObj);
     } finally {
-      setIsLoading(false);
+      if (isFirstLoadRef.current) {
+        setIsLoading(false);
+        isFirstLoadRef.current = false;
+      }
     }
-  }, [fetchFn]);
+  }, []);
 
-  const startPolling = useCallback(() => {
+  // Используем useRef для хранения стабильных ссылок на функции
+  const startPollingRef = useRef<(() => void) | null>(null);
+  const stopPollingRef = useRef<(() => void) | null>(null);
+
+  // Функция запуска polling
+  startPollingRef.current = () => {
     if (isPollingRef.current) {
       console.log('[useShortPolling] Polling already active');
       return;
     }
 
-    console.log(`[useShortPolling] Starting polling with interval ${interval}ms`);
+    console.log(`[useShortPolling] Starting polling with interval ${intervalRef.current}ms`);
     isPollingRef.current = true;
 
     const poll = async () => {
       await fetchData();
 
-      if (isPollingRef.current && enabled) {
-        timerIdRef.current = setTimeout(poll, interval);
+      if (isPollingRef.current && enabledRef.current) {
+        timerIdRef.current = setTimeout(poll, intervalRef.current);
       }
     };
 
     poll();
-  }, [fetchData, interval, enabled]);
+  };
 
-  const stopPolling = useCallback(() => {
+  // Функция остановки polling
+  stopPollingRef.current = () => {
     console.log('[useShortPolling] Stopping polling');
     isPollingRef.current = false;
 
@@ -73,24 +106,33 @@ export function useShortPolling<T>({
       clearTimeout(timerIdRef.current);
       timerIdRef.current = null;
     }
-  }, []);
+  };
 
   const refetch = useCallback(async () => {
     console.log('[useShortPolling] Manual refetch triggered');
     await fetchData();
-  }, [fetchData]);
+  }, [fetchData, dataRef]);
 
   useEffect(() => {
     if (enabled) {
-      startPolling();
+      startPollingRef.current?.();
     } else {
-      stopPolling();
+      stopPollingRef.current?.();
     }
 
     return () => {
-      stopPolling();
+      stopPollingRef.current?.();
     };
-  }, [enabled, startPolling, stopPolling, ...deps]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
+
+  const startPolling = useCallback(() => {
+    startPollingRef.current?.();
+  }, []);
+
+  const stopPolling = useCallback(() => {
+    stopPollingRef.current?.();
+  }, []);
 
   return {
     data,
