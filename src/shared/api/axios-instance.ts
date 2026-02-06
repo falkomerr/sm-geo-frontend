@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import { API_BASE_URL } from '../config/api'
 import { storage } from '../lib/storage'
+import { useAuthStore } from '../../app/features/auth/model/store'
 
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -39,6 +40,7 @@ axiosInstance.interceptors.response.use(
         if (!refreshToken) {
           // No refresh token, redirect to login
           storage.clear()
+          useAuthStore.getState().logout()
           window.location.href = '/login'
           return Promise.reject(error)
         }
@@ -63,6 +65,7 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed, clear tokens and redirect to login
         storage.clear()
+        useAuthStore.getState().logout()
         window.location.href = '/login'
         return Promise.reject(refreshError)
       }
